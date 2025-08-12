@@ -1,137 +1,97 @@
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class LoginTests {
- /*
-    1. Make request (POST) to https://reqres.in/api/login
-        with body { "email": "eve.holt@reqres.in", "password": "cityslicka" }
-    2. Get response { "token": "QpwL5tke4Pnpja7X4" }
-    3. Check "token" is "QpwL5tke4Pnpja7X4" and status code 200
-  */
+
+    private static final Logger log = LoggerFactory.getLogger(LoginTests.class);
 
     @Test
-    void successfulLoginTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"cityslicka\"}";
-
+    void postAddObjects() {
         given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-        .when()
-            .post("https://reqres.in/api/login")
-
-        .then()
-            .log().status()
-            .log().body()
-            .statusCode(200)
-            .body("token", is("QpwL5tke4Pnpja7X4"));
-    }
-
-    @Test
-    void unsuccessfulLogin400Test() {
-        String authData = "";
-
-        given()
-                .body(authData)
-                .log().uri()
-
-        .when()
-            .post("https://reqres.in/api/login")
-
-        .then()
-            .log().status()
-            .log().body()
-            .statusCode(400)
-            .body("error", is("Missing email or username"));
-    }
-
-    @Test
-    void userNotFoundTest() {
-        String authData = "{\"email\": \"eveasdas.holt@reqres.in\", \"password\": \"cda\"}";
-
-        given()
-                .body(authData)
-                .contentType(JSON)
+                .headers("Content-Type", "application/json", "User-Agent", "Mozilla/5.0")
+                .body("{\n" +
+                        "   \"name\": \"Apple MacBook Pro 16\",\n" +
+                        "   \"data\": {\n" +
+                        "      \"year\": 2019,\n" +
+                        "      \"price\": 1849.99,\n" +
+                        "      \"CPU model\": \"Intel Core i9\",\n" +
+                        "      \"Hard disk size\": \"1 TB\"\n" +
+                        "   }\n" +
+                        "}")
                 .log().uri()
 
                 .when()
-                .post("https://reqres.in/api/login")
+                .post("https://api.restful-api.dev/objects")
 
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .body("error", is("user not found"));
+                .then().log().all().statusCode(200)
+                .body("name", is("Apple MacBook Pro 16"));
     }
 
     @Test
-    void missingPasswordTest() {
-        String authData = "{\"email\": \"eveasdas.holt@reqres.in\"}";
+    void find64GbCapacity() {
+        given().baseUri("https://api.restful-api.dev/").queryParam("id", 3, 5, 10)
 
-        given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("https://reqres.in/api/login")
+                .when().get("/objects")
 
                 .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .body("error", is("Missing password"));
-    }
-
-
-    @Test
-    void missingLoginTest() {
-        String authData = "{\"password\": \"cda\"}";
-
-        given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("https://reqres.in/api/login")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .body("error", is("Missing email or username"));
-    }
-    @Test
-    void wrongBodyTest() {
-        String authData = "%}";
-
-        given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("https://reqres.in/api/login")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400);
+                .statusCode(200)
+                .body("$", hasSize(3))
+                .body("name", hasItem("Apple iPad Mini 5th Gen"))
+                .body("find { it.id == '10' }.data.Capacity", is("64 GB"));
     }
 
     @Test
-    void unsuccessfulLogin415Test() {
+    void find64GbCapacity2() {
         given()
-                .log().uri()
-                .post("https://reqres.in/api/login")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(415);
+                .queryParam("id", "3", "5", "10").
+                when()
+                .get("https://api.restful-api.dev/objects").
+                then()
+                .statusCode(200)
+                .body("find { it.id == '10'}.data.Capacity", is("64 GB"));
     }
+
+    @Test
+    void assertHeadersTest() {
+        given()
+                .queryParam("id", "3", "5", "10").
+                when()
+                .get("https://api.restful-api.dev/objects").
+                then()
+                .statusCode(200)
+                .header("Cf-Cache-Status", "DYNAMIC")
+                .log().all();
+    }
+
+    @Test
+    void measureResponceTimeTest() {
+        given()
+                .queryParam("id", "3", "5", "10").
+                when()
+                .get("https://api.restful-api.dev/objects").
+                then()
+                .statusCode(200)
+                .time(Matchers.lessThan(Long.valueOf("2")), TimeUnit.SECONDS)
+                .log().all();
+    }
+
+    @Test
+    void forEachObjectAssertThatLengthMoreThan3() {
+        given()
+                .queryParam("id", "3", "5", "10").
+                when()
+                .get("https://api.restful-api.dev/objects").
+                then()
+                .statusCode(200)
+                .body("name.every { it.length() > 3 }",is(true));
+
+    }
+
 }
