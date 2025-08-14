@@ -1,3 +1,5 @@
+package tests;
+
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -90,7 +92,7 @@ public class LoginTests {
                 .get("https://api.restful-api.dev/objects").
                 then()
                 .statusCode(200)
-                .body("name.every { it.length() > 3 }",is(true));
+                .body("name.every { it.length() > 3 }", is(true));
 
     }
 
