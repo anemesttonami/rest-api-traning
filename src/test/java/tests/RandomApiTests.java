@@ -2,17 +2,13 @@ package tests;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-public class LoginTests {
-
-    private static final Logger log = LoggerFactory.getLogger(LoginTests.class);
+public class RandomApiTests {
 
     @Test
     void postAddObjects() {

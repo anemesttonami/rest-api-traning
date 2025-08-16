@@ -41,6 +41,7 @@ public class ReqresSpec {
 
     public static RequestSpecification reqPostSuccessCreateSession = with().
             contentType(ContentType.JSON)
+            .filter(withCustomTemplates())
             .header("x-api-key", "reqres-free-v1")
             .header("accept", "application/json")
             .basePath("/login")
